@@ -10,10 +10,31 @@ try:
 except:
     raise RuntimeError("You don't have the Ordoro USPS API key loaded as an environment variable.")
 
-def get_rate_from_usps(zip_origin, zip_dest, ounces, width, height, depth, girth=None):
+def get_rate_from_usps(zip_origin, zip_dest, ounces, width=None, height=None, depth=None,
+                        girth=None, container=""):
 
-    size = 'REGULAR' if int(width)+int(height)+int(depth) < 12 else 'LARGE'
-    girth = int(width)*2 + int(depth)*2 if girth is None else girth
+    #defaults, override below in dimensions if clause
+    dimensions_xml = ""
+    whd_xml = ""
+    size = "REGULAR"
+
+    if width is not None and height is not None and depth is not None:
+        dimensions = [float(width), float(height), float(depth)]
+        if sum(dimensions) > 12:
+            size = 'LARGE'
+            dimensions_xml = """"
+                <Width>{1}</Width>
+                <Length>{2}</Length>
+                <Height>{3}</Height>""".format(width, height, depth)
+
+        if girth is None:
+            #calculate a girth if none provided. Take 2 shortest dimensions and multiply.
+            dimensions.sort()
+            girth = 2 * dimensions[0] + 2 * dimensions[1]
+
+    dimensions_xml = dimensions_xml + "<Girth>{0}</Girth>".format(girth)
+
+    #calculate our weights.
     ounces = float(ounces)
     pounds = math.floor(ounces/16)
     ozs = ounces % 16
@@ -26,16 +47,12 @@ def get_rate_from_usps(zip_origin, zip_dest, ounces, width, height, depth, girth
     <ZipDestination>{2}</ZipDestination>
     <Pounds>{3}</Pounds>
     <Ounces>{4}</Ounces>
-    <Container />
-    <Size>{5}</Size>
-    <Width>{6}</Width>
-    <Length>{7}</Length>
-    <Height>{8}</Height>
-    <Girth>{9}</Girth>
+    <Container>{5}</Container>
+    <Size>{6}</Size>{7}
     <Machinable>true</Machinable>
     </Package>
     </RateV4Request>""".format(ORDORO_USPS_KEY, zip_origin, zip_dest, pounds, ozs,
-        size, width, height, depth, girth)
+        container, size, dimensions_xml)
 
     return requests.get('http://production.shippingapis.com/ShippingAPI.dll?API=RateV4&XML='+rateV4Request)
 
@@ -56,7 +73,9 @@ def get_services_from_response(xmlstring):
 
 
 if __name__ == "__main__":
-    a = get_rate_from_usps(78701, 83501, 32, 3,2,5)
+    a = get_rate_from_usps(78701, 83501, 32, width=3, height=2, depth=5)
     # make sure status was good, etc.
     b = get_services_from_response(a.text)
     print(a.status_code)
+    print(a.text)
+    print(b)
