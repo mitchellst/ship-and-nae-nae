@@ -38,12 +38,13 @@ def container_xml_section(width, height, depth, girth, container):
                 <Height>{3}</Height>
                 """.format(width, height, depth)
 
-        if girth is None:
+        if girth == "":
             #calculate a girth if none provided. Take 2 shortest dimensions and multiply.
             dimensions.sort()
             girth = 2 * dimensions[0] + 2 * dimensions[1]
 
-    size_xml = "<Size>{0}</Size>".format(size)
+    size_xml = """<Size>{0}</Size>
+    """.format(size)
 
     return container_xml + size_xml + whd_xml + "<Girth>{0}</Girth>".format(girth)
 
@@ -142,10 +143,9 @@ def get_rates_in_dictionary(*args, **kwargs):
 def build_label_request_xml(fromDict, toDict, weight, service_type="PRIORITY",
                 width=None, height=None, depth=None, girth=None, container=""):
 
-    request_xml = """<?xml version="1.0" encoding="UTF-8" ?>
+    request_xml = """<?xml version="1.0" encoding="UTF-8"?>
     <DelivConfirmCertifyV4.0Request USERID="{0}">
     <Revision>2</Revision>
-    <ImageParameters />
     <FromName>{1}</FromName>
     <FromFirm>{2}</FromFirm>
     <FromAddress1>{3}</FromAddress1>
@@ -164,8 +164,7 @@ def build_label_request_xml(fromDict, toDict, weight, service_type="PRIORITY",
     <ToZip4>{16}</ToZip4>
     <WeightInOunces>{17}</WeightInOunces>
     <ServiceType>{18}</ServiceType>
-    <ImageType>TIF</ImageType>
-    {19}
+    <ImageType>TIF</ImageType>{19}
     <Machinable>true</Machinable>
     </DelivConfirmCertifyV4.0Request>""".format(ORDORO_USPS_KEY,
         fromDict['name'], fromDict['firm'], fromDict['address1'], fromDict['address2'],
@@ -185,10 +184,14 @@ def confirm_label():
 
 #convenient little tester while building.
 if __name__ == "__main__":
-    a = buid_rate_request_xml(78701, 83501, 32, width=3, height=2, depth=5)
-    b = issue_usps_api_request(a)
+    #Note the ridiculous way that "address1" is the apt/unit number, "address2" is main address.
+    fromDict = {'name': 'Mitchell', 'firm': '', 'address2': r'111 Preston Ave', 'address1': '',
+        'city': 'Lewiston', 'state': 'ID', 'zip': '83501', 'zip4': ''}
+    toDict = {'name': 'Stoutin', 'firm': '', 'address2': r'11160 Jollyvill Rd', 'address1': 'APT 1000',
+        'city': 'Austin', 'state': 'TX', 'zip': '78759', 'zip4': ''}
+    a = build_label_request_xml(fromDict, toDict, 44, width=3, height=5, depth=2)
+    b = issue_usps_api_request(a, api="certify")
     # make sure status was good, etc.
-    c = get_service_rates_from_response(b.text)
+    print(a)
     print(b.status_code)
     print(b.text)
-    print(c)
