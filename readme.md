@@ -19,7 +19,7 @@ It will return a label as a tiff image.
 
 for `getrates` endpoint:
 
-    http://localhost:8000/getquotes/?or_zip=78701&ds_zip=83501&weight=66&width=3&height=6&depth=3
+    http://localhost:8000/getquotes/?from_zip=78701&to_zip=83501&weight=66&width=3&height=6&depth=3
 
 it will return:
 

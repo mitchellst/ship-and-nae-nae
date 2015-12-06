@@ -5,7 +5,7 @@ from .uspsinterface import get_rates_in_dictionary, get_label_image, flip_addres
 
 def get_quote(request):
 
-    getrate_args = [request.GET['or_zip'], request.GET['ds_zip'], request.GET['weight']]
+    getrate_args = [request.GET['from_zip'], request.GET['to_zip'], request.GET['weight']]
     getrate_kwargs = {}
     for x in ['width', 'height', 'depth', 'girth', 'container']:
         if x in request.GET:
