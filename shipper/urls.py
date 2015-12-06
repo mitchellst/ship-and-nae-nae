@@ -19,4 +19,5 @@ from django.contrib import admin
 urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
     url(r'^getquotes/', 'shipperapi.views.get_quote'),
+    url(r'^getlabel/', 'shipperapi.views.get_label'),
 ]

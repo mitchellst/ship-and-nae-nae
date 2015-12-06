@@ -33,10 +33,10 @@ def container_xml_section(width, height, depth, girth, container):
         dimensions = [float(width), float(height), float(depth)]
         if sum(dimensions) > 12:
             size = 'LARGE'
-            whd_xml = """"
-                <Width>{1}</Width>
-                <Length>{2}</Length>
-                <Height>{3}</Height>
+            whd_xml = """
+                <Width>{0}</Width>
+                <Length>{1}</Length>
+                <Height>{2}</Height>
                 """.format(width, height, depth)
 
         if girth == "":
@@ -180,17 +180,20 @@ def build_label_request_xml(fromDict, toDict, weight, service_type="PRIORITY",
 
     return request_xml
 
-def save_image(xmlstring):
+def extract_image_from_label_response(label_xmlstring):
     """
-    Little tester to be sure I'm outputting a label. GUESS WHAT?! It works.
-    Committing this for the follow-along.
+    Decodes tiff image from USPS XML label response, and returns it as bytes.
+    You can either save and store it and provide a url for it in JSON, or just
+    write this image to your response.
     """
-    root = ET.fromstring(xmlstring)
+    root = ET.fromstring(label_xmlstring)
     label = root.find('DeliveryConfirmationLabel')
-    print(type(base64.b64decode(label.text)))
-    with open('testlabel.tiff', 'wb') as labelfile:
-        labelfile.write(base64.b64decode(label.text))
-    return True
+    return base64.b64decode(label.text)
+
+def get_label_image(fromDict, toDict, weightInOunces, **kwargs):
+    request_xml = build_label_request_xml(fromDict, toDict, weightInOunces, **kwargs)
+    label_xml = issue_usps_api_request(request_xml, api="certify")
+    return extract_image_from_label_response(label_xml.text)
 
 
 #convenient little tester while building.
@@ -200,7 +203,3 @@ if __name__ == "__main__":
         'city': 'Lewiston', 'state': 'ID', 'zip': '83501', 'zip4': ''}
     toDict = {'name': 'Stoutin', 'firm': '', 'address2': r'11160 Jollyvill Rd', 'address1': 'APT 1000',
         'city': 'Austin', 'state': 'TX', 'zip': '78759', 'zip4': ''}
-    a = build_label_request_xml(fromDict, toDict, 44, width=3, height=5, depth=2)
-    b = issue_usps_api_request(a, api="certify")
-    # make sure status was good, etc.
-    save_image(b.text)
