@@ -196,6 +196,13 @@ def get_rates_in_dictionary(*args, **kwargs):
 def build_label_request_xml(fromDict, toDict, weight, service_type="PRIORITY",
                 width=None, height=None, depth=None, girth=None, container=""):
 
+    # Bug fix. USPS API crashes if you pass a pound sign, e.g. "Apt #20"
+    for key, value in fromDict.items():
+        if type(value) == str:
+            fromDict[key] = value.replace('#', '')
+    for key, value in toDict.items():
+        if type(value) == str:
+            toDict[key] = value.replace('#', '')
 
     request_xml = """<?xml version="1.0" encoding="UTF-8"?>
     <DelivConfirmCertifyV4.0Request USERID="{0}">
