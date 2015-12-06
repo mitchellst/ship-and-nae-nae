@@ -185,11 +185,7 @@ def get_rates_in_dictionary(*args, **kwargs):
         - Container is NONRECTANGULAR
     """
     requestxml = build_rate_request_xml(*args, **kwargs)
-    print('request:')
-    print(requestxml)
     from_usps = issue_usps_api_request(requestxml, api="rates")
-    print('from usps:')
-    print(from_usps.text)
     return get_service_rates_from_response(from_usps.text)
 
 
