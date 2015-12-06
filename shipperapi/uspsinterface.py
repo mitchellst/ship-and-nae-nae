@@ -108,6 +108,47 @@ def build_rate_request_xml(zip_origin, zip_dest, ounces, width=None, height=None
 
     return rateV4Request
 
+def container_and_service(serviceName):
+    """
+    Takes a service description as returned from the rates API and returns the ServiceType and Container
+    enumerations as required by the labels API in order to print a label for that service. Returns these in
+    a dictionary with two keys, "service_type" and "container". Client can simply repeat these back to our label
+    endpoint for their chosen service.
+    """
+
+    SERVICES = {
+        "Library": 'LIBRARY MAIL',
+        "First Class": "FIRST CLASS",
+        "Standard Post": 'STANDARD POST',
+        "Media Mail": 'MEDIA MAIL',
+        "Priority": 'PRIORITY',
+    }
+
+    CONTAINERS = {
+        "Small Flat Rate Envelope": "SM FLAT RATE ENVELOPE",
+        "Legal Flat Rate Envelope": "LEGAL FLAT RATE ENVELOPE",
+        "Window Flat Rate Envelope": "WINDOW FLAT RATE ENVELOPE",
+        "Padded Flat Rate Envelope": "PADDED FLAT RATE ENVELOPE",
+        "Gift Card Flat Rate Envelope": "GIFT CARD FLAT RATE ENVELOPE",
+        "Flat Rate Envelope": "FLAT RATE ENVELOPE",
+        "Small Flat Rate Box": "SM FLAT RATE BOX",
+        "Medium Flat Rate Box": "MD FLAT RATE BOX",
+        "Large Flat Rate Box": "LG FLAT RATE BOX",
+        "Flat Rate Box": "FLAT RATE BOX",
+    }
+
+    out = {"service_type": "", "container": ""}
+
+    for container in CONTAINERS.keys():
+        if container in serviceName:
+            out['container'] = CONTAINERS[container]
+
+    for service in SERVICES.keys():
+        if service in serviceName:
+            out['service_type'] = SERVICES[service]
+
+    return out
+
 
 def get_service_rates_from_response(rates_xmlstring):
     out = {}
@@ -119,8 +160,10 @@ def get_service_rates_from_response(rates_xmlstring):
         #USPS returns weird superscript html characters, which it has to escape for XML.
         # Make them unicode for our JSON response. Note: this leaves <sup> html tags in place.
         service_name = html.unescape(service_name_raw.replace('&amp;', '&'))
+        service_info = {"rate": service.find('Rate').text,}
+        service_info.update(container_and_service(service_name))
+        out[service_name] = service_info
 
-        out[service_name] = service.find('Rate').text
     return out
 
 
