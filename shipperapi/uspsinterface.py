@@ -3,6 +3,7 @@ import math
 import requests
 import xml.etree.ElementTree as ET
 import html
+import base64
 import os
 
 
@@ -143,6 +144,7 @@ def get_rates_in_dictionary(*args, **kwargs):
 def build_label_request_xml(fromDict, toDict, weight, service_type="PRIORITY",
                 width=None, height=None, depth=None, girth=None, container=""):
 
+
     request_xml = """<?xml version="1.0" encoding="UTF-8"?>
     <DelivConfirmCertifyV4.0Request USERID="{0}">
     <Revision>2</Revision>
@@ -178,8 +180,17 @@ def build_label_request_xml(fromDict, toDict, weight, service_type="PRIORITY",
 
     return request_xml
 
-def confirm_label():
-    pass
+def save_image(xmlstring):
+    """
+    Little tester to be sure I'm outputting a label. GUESS WHAT?! It works.
+    Committing this for the follow-along.
+    """
+    root = ET.fromstring(xmlstring)
+    label = root.find('DeliveryConfirmationLabel')
+    print(type(base64.b64decode(label.text)))
+    with open('testlabel.tiff', 'wb') as labelfile:
+        labelfile.write(base64.b64decode(label.text))
+    return True
 
 
 #convenient little tester while building.
@@ -192,6 +203,4 @@ if __name__ == "__main__":
     a = build_label_request_xml(fromDict, toDict, 44, width=3, height=5, depth=2)
     b = issue_usps_api_request(a, api="certify")
     # make sure status was good, etc.
-    print(a)
-    print(b.status_code)
-    print(b.text)
+    save_image(b.text)
