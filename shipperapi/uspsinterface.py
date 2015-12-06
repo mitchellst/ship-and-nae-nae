@@ -66,6 +66,19 @@ def issue_usps_api_request(xmlstring, api="rates"):
     request_string = this_api + xmlstring
     return requests.get(request_string)
 
+def flip_address_1_and_2(addressDict):
+    """
+    Swaps the values of "address1" and "address2" in the dict it is passed.
+
+    The USPS label API reverses the normal uses of "addres 1" and "address 2".
+    Address 1 is the apartment/unit/suite number, and can be blank. Address 2 is the street number,
+    and is required.
+    """
+    swap = addressDict['address1']
+    addressDict['address1'] = addressDict['address2']
+    addressDict['address2'] = swap
+    return None
+
 
 ###########################################
 #### RATE REQUEST INTERFACE
