@@ -5,7 +5,7 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework.renderers import BrowsableAPIRenderer
 
-from .serializers import RateForm
+from .serializers import RateForm, LabelForm
 from .uspsinterface import get_rates_in_dictionary, get_label_image, flip_address_1_and_2
 
 class get_quote(GenericAPIView):
@@ -77,17 +77,62 @@ class get_quote(GenericAPIView):
     def post(self, request, *args, **kwargs):
         return self.fetch_rate(request)
 
-def get_label(request):
+class get_label(GenericAPIView):
+    """
+    Returns a TIFF image of a label from the USPS API, or a JSON response with an error.
 
-    AVAILABLE_LABEL_KWARGS = ("width", "height", "depth", "container", "girth", "service_type")
+    Parameters:
+    weight [REQUIRED] weight of package in ounces.
+    height [REQUIRED if w+h+d > 12] height of package in inches.
+    width [REQUIRED if w+h+d > 12] width of package in inches.
+    depth [REQUIRED if w+h+d > 12] depth of package in inches.
+    girth [REQUIRED if NONRECTANGULAR] girth of package in inches.
+    container [OPTIONAL]- potential values:
+        RECTANGULAR | NONRECTANGULAR | Flat Rate Envelope | Padded Flat Rate Envelope | Legal Flat Rate Envelope |
+        Sm Flat Rate Envelope | Window Flat Rate Envelope | Gift Card Flat Rate Envelope |
+        Flat Rate Box | Sm Flat Rate Box | Md Flat Rate Box | Lg Flat Rate Box
+    service_type [DEFAULT: PRIORITY] - potential values:
+        PRIORITY | LIBRARY MAIL | MEDIA MAIL | STANDARD POST | FIRST CLASS
 
-    from_dict = {key[5:]: value for key, value in request.GET.items() if key[:5]=="from_"}
-    to_dict = {key[3:]: value for key, value in request.GET.items() if key[:3]=="to_"}
-    flip_address_1_and_2(from_dict)
-    flip_address_1_and_2(to_dict)
-    label_kwargs = {key: value  for key, value in request.GET.items() if key in AVAILABLE_LABEL_KWARGS}
-    label = get_label_image(from_dict, to_dict, request.GET['weight'], **label_kwargs)
+    A full address for both sender and recipient. These are prefixed "from_" and "to_", e.g., you need a "from_name" and "to_name"
+    name [REQUIRED]
+    firm [OPTIONAL]
+    address1 [REQUIRED]
+    address2 [OPTIONAL]
+    city [REQUIRED]
+    state [REQUIRED] - 2-letter abbreviation.
+    zip [REQUIRED] - 5-digit
+    zip4 [OPTIONAL] - 4-digit extension
 
-    response = HttpResponse(status=200, content_type="image/tiff")
-    response.write(label)
-    return response
+    """
+    serializer_class = LabelForm
+
+    def fetch_the_label(self, request):
+
+        AVAILABLE_LABEL_KWARGS = ("width", "height", "depth", "container", "girth", "service_type")
+
+        from_dict = {key[5:]: value for key, value in request.data.items() if key[:5]=="from_"}
+        to_dict = {key[3:]: value for key, value in request.data.items() if key[:3]=="to_"}
+        flip_address_1_and_2(from_dict)
+        flip_address_1_and_2(to_dict)
+        label_kwargs = {key: value  for key, value in request.data.items() if key in AVAILABLE_LABEL_KWARGS and value != ''}
+        label = get_label_image(from_dict, to_dict, request.data['weight'], **label_kwargs)
+
+        # We have a label!!
+        if type(label) == bytes:
+            response = HttpResponse(status=200, content_type="image/tiff")
+            response.write(label)
+
+        # Nope, we have a dictionary of errors.
+        else:
+            response = Response(label, status=400)
+        return response
+
+    # Get and post will do the same thing, we just need them here as routes.
+    def get(self, request, *args, **kwargs):
+        if not request.data:
+            return Response({})
+        return self.fetch_the_label(request)
+
+    def post(self, request, *args, **kwargs):
+        return self.fetch_the_label(request)

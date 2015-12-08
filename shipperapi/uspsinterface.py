@@ -75,7 +75,12 @@ def flip_address_1_and_2(addressDict):
     and is required.
     """
     swap = addressDict['address1']
-    addressDict['address1'] = addressDict['address2']
+
+    #since address 2 isn't required, it may not exist.
+    try:
+        addressDict['address1'] = addressDict['address2']
+    except KeyError:
+        addressDict['address1'] = ''
     addressDict['address2'] = swap
     return None
 
@@ -271,14 +276,22 @@ def extract_image_from_label_response(label_xmlstring):
     Decodes tiff image from USPS XML label response, and returns it as bytes.
     You can either save and store it and provide a url for it in JSON, or just
     write this image to your response.
+
+    If the XML string contains an error in stead of an encoded label, it returns
+    a dictionary with the key "errors" and a description of the error.
     """
     root = ET.fromstring(label_xmlstring)
+
+    if root.tag == 'Error':
+        return {'errors': root.find('Description').text }
+
+    #OK, then it should be a label!
     label = root.find('DeliveryConfirmationLabel')
     return base64.b64decode(label.text)
 
-def get_label_image(fromDict, toDict, weightInOunces, **kwargs):
+def get_label_image(fromDict, toDict, weightInOunces, api="certify", **kwargs):
     request_xml = build_label_request_xml(fromDict, toDict, weightInOunces, **kwargs)
-    label_xml = issue_usps_api_request(request_xml, api="certify")
+    label_xml = issue_usps_api_request(request_xml, api=api)
     return extract_image_from_label_response(label_xml.text)
 
 

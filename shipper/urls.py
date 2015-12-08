@@ -20,5 +20,5 @@ from shipperapi.views import get_quote, get_label
 urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
     url(r'^getquotes/', get_quote.as_view()),
-    url(r'^getlabel/', get_label),
+    url(r'^getlabel/', get_label.as_view()),
 ]
