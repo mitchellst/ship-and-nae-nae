@@ -152,19 +152,44 @@ def container_and_service(serviceName):
 
 
 def get_service_rates_from_response(rates_xmlstring):
-    print(rates_xmlstring)
+    """
+    Builds the dictionary of rate responses. Also adds one other key, status,
+    which is an integer representing the HTTP status that should be passed back with
+    the response. It leverages USPS's error handling. If USPS hands back an error, that
+    error will be in "errors", and "status" will be 400 (Bad Request)
+    """
+
     out = {}
+    error = None
     root = ET.fromstring(rates_xmlstring)
     package = root.find('Package')
-    for service in package.findall('Postage'):
-        service_name_raw = service.find('MailService').text
+    if package is not None:
+        for service in package.findall('Postage'):
+            service_name_raw = service.find('MailService').text
 
-        #USPS returns weird superscript html characters, which it has to escape for XML.
-        # Make them unicode for our JSON response. Note: this leaves <sup> html tags in place.
-        service_name = html.unescape(service_name_raw.replace('&amp;', '&'))
-        service_info = {"rate": service.find('Rate').text,}
-        service_info.update(container_and_service(service_name))
-        out[service_name] = service_info
+            #USPS returns weird superscript html characters, which it has to escape for XML.
+            # Make them unicode for our JSON response. Note: this leaves <sup> html tags in place.
+            service_name = html.unescape(service_name_raw.replace('&amp;', '&'))
+            service_info = {"rate": service.find('Rate').text,}
+            service_info.update(container_and_service(service_name))
+            out[service_name] = service_info
+
+        #Error can be in two places. Inside the Package tag:
+        package_has_error = package.find('Error')
+        if package_has_error is not None:
+            error = package_has_error
+
+    # or outside the package tag:
+    if error is None:
+        error = root if root.tag == 'Error' else root.find('Error')
+
+
+    # Now put the error in our dictionary.
+    if error is not None:
+        out['errors'] = 'USPS Error: ' + error.find('Description').text
+        out['status'] = 400
+    else:
+        out['status'] = 200
 
     return out
 

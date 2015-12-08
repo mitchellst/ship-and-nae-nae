@@ -44,13 +44,28 @@ class get_quote(GenericAPIView):
     serializer_class = RateForm
 
     def fetch_rate(self, request):
-        getrate_args = [request.data['from_zip'], request.data['to_zip'], request.data['weight']]
+        # Validate arguments as we arrange them for USPS Interface.
+        try: # Required args must exist.
+            getrate_args = [request.data['from_zip'], request.data['to_zip'], request.data['weight']]
+        except KeyError:
+            return Response({"errors": "Rate request must specify origin and destination zips, weight."}, status=400)
+
+        #Keyword args need not exist, but if they do, they must coerce to numbers.
         getrate_kwargs = {}
-        for x in ['width', 'height', 'depth', 'girth', 'container']:
-            if x in request.data:
+        for x in ['width', 'height', 'depth', 'girth']:
+            if x in request.data and request.data[x] != '':
                 getrate_kwargs[x] = request.data[x]
+                if type(request.data[x]) == str:
+                    try:
+                        float(request.data[x].strip())
+                    except ValueError:
+                        return Response({"errors": "{0} must be a number".format(x)}, status=400)
+
+        # Pass our prepared arguments to our USPS API interface, and return result.
         responseDict = get_rates_in_dictionary(*getrate_args, **getrate_kwargs)
-        response = Response(responseDict, status=200)
+
+        status = responseDict.pop("status")
+        response = Response(responseDict, status=status)
         return response
 
     def get(self, request, *args, **kwargs):
