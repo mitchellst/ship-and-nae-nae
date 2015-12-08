@@ -87,7 +87,8 @@ def flip_address_1_and_2(addressDict):
 def build_rate_request_xml(zip_origin, zip_dest, ounces, width=None, height=None, depth=None,
                         girth=None, container=""):
 
-    dimensions_xml = container_xml_section(width, height, depth, girth, container)
+    #specifying container causes rate API to error out unless requesting specific service.
+    dimensions_xml = container_xml_section(width, height, depth, girth, '')
 
     #calculate our weights.
     ounces = float(ounces)
@@ -151,6 +152,7 @@ def container_and_service(serviceName):
 
 
 def get_service_rates_from_response(rates_xmlstring):
+    print(rates_xmlstring)
     out = {}
     root = ET.fromstring(rates_xmlstring)
     package = root.find('Package')

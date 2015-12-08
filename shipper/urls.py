@@ -15,9 +15,10 @@ Including another URLconf
 """
 from django.conf.urls import include, url
 from django.contrib import admin
+from shipperapi.views import get_quote, get_label
 
 urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
-    url(r'^getquotes/', 'shipperapi.views.get_quote'),
-    url(r'^getlabel/', 'shipperapi.views.get_label'),
+    url(r'^getquotes/', get_quote.as_view()),
+    url(r'^getlabel/', get_label),
 ]
