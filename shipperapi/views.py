@@ -116,7 +116,7 @@ class get_label(GenericAPIView):
         flip_address_1_and_2(from_dict)
         flip_address_1_and_2(to_dict)
         label_kwargs = {key: value  for key, value in request.data.items() if key in AVAILABLE_LABEL_KWARGS and value != ''}
-        label = get_label_image(from_dict, to_dict, request.data['weight'], **label_kwargs)
+        label = get_label_image(from_dict, to_dict, request.data['weight'], api="certify", **label_kwargs)
 
         # We have a label!!
         if type(label) == bytes:

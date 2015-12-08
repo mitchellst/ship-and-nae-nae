@@ -56,7 +56,8 @@ def issue_usps_api_request(xmlstring, api="rates"):
     unit testing possible without pestering the USPS API too much."""
 
     valid_api_identifiers = {"rates": "http://production.shippingapis.com/ShippingAPI.dll?API=RateV4&XML=",
-        "certify": "https://secure.shippingapis.com/ShippingAPI.dll?API=DelivConfirmCertifyV4&XML=",}
+        "certify": "https://secure.shippingapis.com/ShippingAPI.dll?API=DelivConfirmCertifyV4&XML=",
+        "confirm": "https://secure.shippingapis.com/ShippingAPI.dll?API=DeliveryConfirmationV4&XML=",}
     try:
         this_api = valid_api_identifiers[api]
     except KeyError:
@@ -225,16 +226,16 @@ def get_rates_in_dictionary(*args, **kwargs):
 #### LABEL REQUEST INTERFACE
 ###########################################
 
-def build_label_request_xml(fromDict, toDict, weight, service_type="PRIORITY",
+def build_label_request_xml(fromDict, toDict, weight, api="certify", service_type="PRIORITY",
                 width=None, height=None, depth=None, girth=None, container=""):
 
-    # Bug fix. USPS API crashes if you pass a pound sign, e.g. "Apt #20"
+    # Bug fix. USPS API crashes if you pass a pound sign or ampersand, e.g. "Apt #20", "Stoutin & Sons"
     for key, value in fromDict.items():
         if type(value) == str:
-            fromDict[key] = value.replace('#', '')
+            fromDict[key] = value.replace('#', '').replace('&', 'and')
     for key, value in toDict.items():
         if type(value) == str:
-            toDict[key] = value.replace('#', '')
+            toDict[key] = value.replace('#', '').replace('&', 'and')
 
     request_xml = """<?xml version="1.0" encoding="UTF-8"?>
     <DelivConfirmCertifyV4.0Request USERID="{0}">
@@ -269,6 +270,10 @@ def build_label_request_xml(fromDict, toDict, weight, service_type="PRIORITY",
         weight, service_type, container_xml_section(width, height, depth, girth, container)
     )
 
+    # Looks like the Ordoro user ID isn't actually authorized for this.
+    if api == "confirm":
+        request_xml = request_xml.replace('DelivConfirmCertifyV4.0Request', 'DeliveryConfirmationV4.0Request',)
+
     return request_xml
 
 def extract_image_from_label_response(label_xmlstring):
@@ -290,15 +295,8 @@ def extract_image_from_label_response(label_xmlstring):
     return base64.b64decode(label.text)
 
 def get_label_image(fromDict, toDict, weightInOunces, api="certify", **kwargs):
-    request_xml = build_label_request_xml(fromDict, toDict, weightInOunces, **kwargs)
+    request_xml = build_label_request_xml(fromDict, toDict, weightInOunces, api=api, **kwargs)
+    print(request_xml)
     label_xml = issue_usps_api_request(request_xml, api=api)
+    print(label_xml)
     return extract_image_from_label_response(label_xml.text)
-
-
-#convenient little tester while building.
-if __name__ == "__main__":
-    #Note the ridiculous way that "address1" is the apt/unit number, "address2" is main address.
-    fromDict = {'name': 'Mitchell', 'firm': '', 'address2': r'111 Preston Ave', 'address1': '',
-        'city': 'Lewiston', 'state': 'ID', 'zip': '83501', 'zip4': ''}
-    toDict = {'name': 'Stoutin', 'firm': '', 'address2': r'11160 Jollyvill Rd', 'address1': 'APT 1000',
-        'city': 'Austin', 'state': 'TX', 'zip': '78759', 'zip4': ''}

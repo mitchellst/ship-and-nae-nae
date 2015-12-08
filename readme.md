@@ -8,47 +8,15 @@ it out of version control. Before running, in bash:
     $echo $ORDORO_USPS_KEY
     $ #make sure you see the key here
 
-## Some Test URL Strings
-URL-encoded GET requests are annoying to write, I know. Since I didn't build a nice JS client, here are some templates to cut-and-pasted into your browser and mess around with:
+## Taking it for a Spin
+Once you have the environment variable in place, in your virtual environment run `pip install -r requirements.txt`. You're ready to spin it up: `python manage.py runserver` will run it on port 8000.
 
-For `getlabel` endpoint:
+From here, there are two urls:
 
-    http://localhost:8000/getlabel/?weight=44&width=6&height=9&depth=7&from_name=Mitchell&from_firm=&from_address2=&from_address1=111%20Preston%20Ave&from_city=Lewiston&from_state=ID&from_zip=83501&from_zip4=&to_name=Stoutin&to_firm=&to_address2=11160%20Jollyville%20Rd&to_address1=APT%201000&to_city=Austin&to_state=TX&to_zip=78759&to_zip4=
+    http://localhost:8000/getrates/
+    http://localhost:8000/getlabel/
 
-It will return a label as a tiff image.
-
-for `getrates` endpoint:
-
-    http://localhost:8000/getquotes/?from_zip=78701&to_zip=83501&weight=66&width=3&height=6&depth=3
-
-it will return:
-
-    {
-      "Library Mail Parcel": {
-        "rate": "4.51",
-        "service_type": "LIBRARY MAIL",
-        "container": ""
-      },
-      "Priority Mail 3-Day<sup>\u2122<\/sup> Padded Flat Rate Envelope": {
-        "rate": "6.10",
-        "service_type": "PRIORITY",
-        "container": "FLAT RATE ENVELOPE"
-      },
-      "Priority Mail Express 2-Day<sup>\u2122<\/sup> Flat Rate Boxes": {
-        "rate": "44.95",
-        "service_type": "PRIORITY",
-        "container": "FLAT RATE BOX"
-      },
-      "Priority Mail 3-Day<sup>\u2122<\/sup> Window Flat Rate Envelope": {
-        "rate": "5.75",
-        "service_type": "PRIORITY",
-        "container": "FLAT RATE ENVELOPE"
-      },
-      "Priority Mail 3-Day<sup>\u2122<\/sup> Small Flat Rate Envelope": {
-        "rate": "5.75",
-        "service_type": "PRIORITY",
-        "container": "FLAT RATE ENVELOPE"
-      }, ... TRUNCATED ...}
+Navigate to each one and you'll see a browsable API. You can issue GET requests with percent-encoded strings or POST JSON or form-encoded data.
 
 ## Answers to Ben's Questions
 
@@ -67,8 +35,6 @@ I know the implementation is simple. Perhaps it doesn't maximally "showcase my a
 My Roadmap from here:
 I don't think I'm going to do most of this, just because we're short on time. But in a perfect world, here's what I'd extend from here:
 * Finish the test suite... by which I mean, at this point, make one.
-* Error handling and data validation-- there's a whole lot of it I didn't do, because it's a wireframe.
-* Add support for other kinds of request-- POST with form data, json (fairly trivial with Django Rest Framework.)
 * Plug in a database, add:
     * authentication, with ability to save labels you've created to your profile
     * Amazon S3 integration, putting labels in buckets, and creating signed URL's for (semi-) securely/privately accessing them. (This will be my favorite feature if I get around to building it.)
