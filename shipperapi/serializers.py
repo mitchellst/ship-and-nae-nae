@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 CONTAINER_CHOICES = (
+    ('', ''),
     ('RECTANGULAR', 'RECTANGULAR'),
     ('NONRECTANGULAR', 'NONRECTANGULAR'),
     ('Flat Rate Envelope', 'Flat Rate Envelope '),
@@ -23,4 +24,4 @@ class RateForm(serializers.Serializer):
     height = serializers.DecimalField(required=False, min_value=0.01, decimal_places=2, max_digits=5)
     depth = serializers.DecimalField(required=False, min_value=0.01, decimal_places=2, max_digits=5)
     girth = serializers.DecimalField(required=False, min_value=0.01, decimal_places=2, max_digits=5)
-    container = serializers.ChoiceField(required=False, choices=CONTAINER_CHOICES)
+    container = serializers.ChoiceField(required=False, choices=CONTAINER_CHOICES, default='')
